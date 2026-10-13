@@ -1,0 +1,5 @@
+{
+  "thrust_n": 20000.0,
+  "radius_m": 4.0,
+  "trailing_edge_thickness_m": 0.0035
+}
