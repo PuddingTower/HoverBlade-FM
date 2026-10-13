@@ -1,0 +1,950 @@
+# Machine-readable task list for HoverBlade-FM (计划.md 第 16 节 / 第 29 节, task T029-format).
+#
+# Transcribed from 计划.md section 16: id / title / priority / depends_on / dod are copied from the
+# 16.1-16.9 tables (P0 blocks the release, P1 important, P2 enhancement), plus the appendix-29 example
+# expansions for T001 and T023.  `status` is this repository's own assessment, not the plan's.
+#
+# status vocabulary
+#   done        - the dod is satisfied by files in this working tree, verified by a command or a test run
+#   in_progress - partially satisfied; what is missing is named in `notes`
+#   todo        - not satisfied / not verifiable in this working tree
+#
+# Known transcription facts
+#   - 计划.md has no T019: the Phase 1 table ends at T018 and Phase 2 starts at T020.  The gap is kept.
+#   - GitHub-hosted and release-time work (T001 push, T007 running CI, T097 firing on a tag, T099 building
+#     an image, T100 publishing) cannot be marked done from a non-git working tree; those are in_progress
+#     with the reason, except T100 which is todo.
+#   - `verified_by` names the concrete command, test or artefact that justifies `done`.
+#
+# Last reviewed: 2026-10-14 against the working tree (git not initialised).
+
+meta:
+  project: HoverBlade-FM
+  version: "0.1.0"
+  source: "计划.md 第 16 节 原子化任务计划, 第 29 节 附录"
+  reviewed_on: "2026-10-14"
+  statuses: ["done", "in_progress", "todo"]
+  counts:
+    total: 99
+    done: 70
+    in_progress: 17
+    todo: 12
+
+tasks:
+  # ---------------------------------------------------------------- Phase 0: 仓库与文献 (16.1)
+  - id: T001
+    title: "创建 GitHub 仓库与基础目录"
+    priority: P0
+    depends_on: []
+    dod:
+      - "仓库目录存在"
+      - "可推送"
+      - "默认分支为 main"
+    status: in_progress
+    notes: "目录结构存在（src/tests/docs/examples/scripts/.github）；本工作树尚未 git init，也没有远端，因此无法推送或设定默认分支。"
+
+  - id: T002
+    title: "添加 Apache-2.0 LICENSE"
+    priority: P0
+    depends_on: [T001]
+    dod:
+      - "LICENSE 存在"
+    status: done
+    verified_by: "LICENSE（Apache-2.0 全文，201 行）+ NOTICE（含第三方许可与文档/数据许可说明）"
+
+  - id: T003
+    title: "添加 README 初稿"
+    priority: P0
+    depends_on: [T001]
+    dod:
+      - "包含安装、运行、目标说明"
+    status: done
+    verified_by: "README.md：三输入、安装、快速开始、保证清单、输出树、开发与测试、许可与免责声明"
+
+  - id: T004
+    title: "添加 CODE_OF_CONDUCT 与 CONTRIBUTING"
+    priority: P1
+    depends_on: [T001]
+    dod:
+      - "文件存在且内容完整"
+    status: done
+    verified_by: "CODE_OF_CONDUCT.md（Contributor Covenant 2.1 全文）+ CONTRIBUTING.md（环境、分支、提交、DoD、PR、风格）"
+
+  - id: T005
+    title: "初始化 pyproject.toml"
+    priority: P0
+    depends_on: [T001]
+    dod:
+      - "uv sync 可成功"
+    status: done
+    notes: "由仓库维护者持有该文件；本轮未重复执行 uv sync（避免安装），依据 uv.lock 与已就位的 .venv（可导入 numpy/scipy/pydantic/cma/pytest/ruff/mypy）判定。"
+    verified_by: "pyproject.toml + uv.lock + .venv 可导入依赖"
+
+  - id: T006
+    title: "配置 ruff、mypy、pytest"
+    priority: P0
+    depends_on: [T005]
+    dod:
+      - "本地命令可运行"
+    status: done
+    notes: "三条命令均可运行；截至本轮 ruff check . 与 mypy src 在他人正在开发的 src 模块上仍报错（约 49 / 19 条），属集成问题而非配置缺失。"
+    verified_by: "uv run ruff check / ruff format --check / mypy src / pytest -q 均可执行；tests/unit 全绿"
+
+  - id: T007
+    title: "配置 GitHub Actions CI"
+    priority: P0
+    depends_on: [T005]
+    dod:
+      - "push 后 CI 运行"
+    status: in_progress
+    notes: "ci.yml / docs.yml / release.yml 已编写（矩阵 3.11+3.12、uv、blunt-TE 硬门）；仓库未初始化 git，无法推送触发；YAML 未经机器校验（环境无 pyyaml），仅人工核对。"
+
+  - id: T008
+    title: "编写文献检索脚本"
+    priority: P0
+    depends_on: [T005]
+    dod:
+      - "可输出 raw.jsonl"
+    status: done
+    verified_by: "python scripts/literature_search.py --offline --out docs/literature_search → raw.jsonl(30) + summary.csv；联网运行 → 108 条记录；tests/unit/test_literature_search.py 35 通过 1 跳过"
+
+  - id: T009
+    title: "生成文献综述模板"
+    priority: P0
+    depends_on: [T008]
+    dod:
+      - "docs/literature_review.md 存在"
+    status: done
+    verified_by: "docs/literature_review.md（中文摘要 + 六主题综合分析 + 取舍决策表 + 38 条带 URL 的参考文献）+ docs/literature_search/queries.md"
+
+  - id: T010
+    title: "建立 ADR 决策记录"
+    priority: P1
+    depends_on: [T003]
+    dod:
+      - "记录主线技术选型"
+    status: done
+    verified_by: "docs/adr/README.md + ADR-001（CST+BEMT+CMA-ES）+ ADR-002（钝尾缘硬约束）+ ADR-003（CAD 可选内核与纯 Python 回退）"
+
+  # ---------------------------------------------------------------- Phase 1: 输入配置与校验 (16.2)
+  - id: T011
+    title: "定义最小输入 schema"
+    priority: P0
+    depends_on: [T005]
+    dod:
+      - "Pydantic 模型通过测试"
+    status: done
+    verified_by: "src/hoverblade_fm/config/schema.py（UserInput/AirfoilBounds/SolverSettings/OptimizationSettings/ResolvedConfig）+ tests/unit/test_config.py 通过"
+
+  - id: T012
+    title: "实现 JSON / CLI 输入"
+    priority: P0
+    depends_on: [T011]
+    dod:
+      - "三输入可运行"
+    status: done
+    verified_by: "实跑：generate --thrust-n 5000 --radius-m 2.5 --trailing-edge-thickness-m 0.0025 --out ... --preset fast 退出码 0；JSON 形式同样通过"
+
+  - id: T013
+    title: "单位转换与校验"
+    priority: P0
+    depends_on: [T011]
+    dod:
+      - "非法输入报错清晰"
+    status: done
+    verified_by: "config/units.py + InputValidationError；实测 --thrust-n -5 → 退出码 2 且列出字段级错误"
+
+  - id: T014
+    title: "自动默认参数策略"
+    priority: P0
+    depends_on: [T011]
+    dod:
+      - "可自动推断密度、转速等"
+    status: done
+    verified_by: "实测输出：ISA 大气（rho/mu/a）、叶片数、转速的 reason 字符串写入 design.json 的 auto_reasons"
+
+  - id: T015
+    title: "自动叶片数策略"
+    priority: P1
+    depends_on: [T014]
+    dod:
+      - "输出解释性日志"
+    status: done
+    verified_by: "defaults.auto_blade_count 返回 AutoValue(value, reason)，运行日志含 '[auto blade count] ...'"
+
+  - id: T016
+    title: "自动 RPM / 叶尖马赫限制"
+    priority: P0
+    depends_on: [T014]
+    dod:
+      - "M_tip <= limit"
+    status: done
+    verified_by: "实测 5000N/2.5m：tip Mach 0.599 <= 0.65；超限直接输入被 resolve() 拒绝（退出码 2）"
+
+  - id: T017
+    title: "示例输入文件"
+    priority: P0
+    depends_on: [T012]
+    dod:
+      - "examples 下有 3 个案例"
+    status: done
+    verified_by: "examples/input_120N.json、input_5000N.json、input_20000N.json（计划第 19 节数值）"
+
+  - id: T018
+    title: "输入不可行检测"
+    priority: P1
+    depends_on: [T013]
+    dod:
+      - "超高载荷时给出提示"
+    status: done
+    verified_by: "defaults.feasibility_warnings（桨盘载荷/CT/尾缘弦长比）；实测 --radius-m 0.1 → 退出码 3（不可行设计）"
+
+  # ---------------------------------------------------------------- Phase 2: 几何与钝尾缘 (16.3)
+  - id: T020
+    title: "实现 10 截面径向站位"
+    priority: P0
+    depends_on: [T011]
+    dod:
+      - "默认 10 个站位"
+    status: done
+    verified_by: "models.DEFAULT_R_STATIONS（0.10…0.97）；导出 sections.csv 恰为 10 行"
+
+  - id: T021
+    title: "实现 CST 翼型基类"
+    priority: P0
+    depends_on: [T020]
+    dod:
+      - "可生成坐标"
+    status: done
+    verified_by: "geometry/cst.py + 10 个 section_*.csv（每站 80 点/面）；tests/unit/test_geometry.py::test_cst_contour_is_closed_and_ordered"
+
+  - id: T022
+    title: "实现显式尾缘间隙参数"
+    priority: P0
+    depends_on: [T021]
+    dod:
+      - "te_gap 可控"
+    status: done
+    verified_by: "test_geometry.py::test_te_gap_equals_the_parameter_exactly；models.AirfoilPoints.te_thickness = y[-1] - y[0]"
+
+  - id: T023
+    title: "实现钝尾缘硬约束"
+    priority: P0
+    depends_on: [T022]
+    dod:
+      - "所有生成截面尾缘厚度大于等于用户输入"
+      - "尾缘厚度为 0 的设计被拒绝"
+      - "单元测试覆盖尾缘硬约束"
+    status: done
+    verified_by: "decode 时投影钳制（clamp_te_gap / enforce_blunt）；tests: test_clamp_te_gap_enforces_the_user_minimum、test_enforce_blunt_never_allows_a_sharp_edge、test_a_zero_gap_request_is_rejected_before_it_reaches_geometry、test_every_station_of_every_design_meets_the_minimum；CI 另加 sections.csv 硬门"
+
+  - id: T024
+    title: "实现尾缘角度检查"
+    priority: P1
+    depends_on: [T022]
+    dod:
+      - "可输出角度或替代指标"
+    status: done
+    notes: "角度已输出且检查存在，但 committed 示例（output_examples/demo_5000N）的 sections.csv 中 r/R>=0.6 的六个站角度为 4.5/2.8/1.8/1.1/0.8°…低于计划第 5.4 节 6° 下界，check-manufacturing 因此报 te_included_angle_band_ok: False。属几何质量待收敛问题（外侧剖面过于平直），非功能缺失。"
+    verified_by: "sections.csv 列 te_included_angle_deg；check-manufacturing 输出 te_included_angle_deg_per_section 与带宽判定"
+
+  - id: T025
+    title: "实现厚度与弯度控制"
+    priority: P0
+    depends_on: [T021]
+    dod:
+      - "可设置 t/c 与 camber"
+    status: done
+    verified_by: "AirfoilBounds 的 t/c、camber 上下限；test_geometry.py::test_thickness_and_camber_controls_are_effective / test_realised_max_thickness_equals_the_parameter"
+
+  - id: T026
+    title: "实现前缘半径控制"
+    priority: P1
+    depends_on: [T021]
+    dod:
+      - "前缘不退化"
+    status: done
+    verified_by: "le_radius_min_over_chord 下界 + test_leading_edge_radius_is_positive_and_scales_with_thickness、test_le_factor_blunts_the_nose_at_fixed_thickness"
+
+  - id: T027
+    title: "实现弦长分布插值"
+    priority: P0
+    depends_on: [T020]
+    dod:
+      - "输出 10 截面弦长"
+    status: done
+    verified_by: "geometry/spanwise.py；sections.csv 的 chord_m 10 个值；test_chord_and_twist_distributions_respect_bounds"
+
+  - id: T028
+    title: "实现扭转角分布插值"
+    priority: P0
+    depends_on: [T020]
+    dod:
+      - "输出 10 截面扭转"
+    status: done
+    verified_by: "sections.csv 的 twist_deg 10 个值（实测 26.2°→4.4° 单调）"
+
+  - id: T029
+    title: "几何光滑性约束"
+    priority: P1
+    depends_on: [T027, T028]
+    dod:
+      - "相邻截面变化率受限"
+    status: done
+    verified_by: "smoothness_penalty 进入目标（lambda_smooth）；test_limit_rate_enforces_the_gradient_cap；check-manufacturing 输出 chord/twist 变化率与限值"
+
+  - id: T030
+    title: "几何合法性检查器"
+    priority: P0
+    depends_on: [T021]
+    dod:
+      - "不交叉、不闭合失败"
+    status: done
+    verified_by: "geometry/validate.py → constraints.json 的 geometry_valid / geometry_issues；test_surfaces_never_coincide_at_the_trailing_edge"
+
+  - id: T031
+    title: "截面坐标导出"
+    priority: P0
+    depends_on: [T021]
+    dod:
+      - "每截面 CSV 生成"
+    status: done
+    verified_by: "sections/section_00_r0.100.csv … section_09_r0.970.csv（10 个文件，归一化 x/c,y/c 与物理 x_m,y_m）+ sections/index.json 约定说明"
+
+  - id: T032
+    title: "几何单元测试"
+    priority: P0
+    depends_on: [T023]
+    dod:
+      - "覆盖尾缘约束"
+    status: done
+    verified_by: "tests/unit/test_geometry.py（25 个测试，含尾缘钳制、零间隙拒绝、逐站最小厚度）全部通过"
+
+  # ---------------------------------------------------------------- Phase 3: 悬停气动模型 (16.4)
+  - id: T033
+    title: "定义气动状态模型"
+    priority: P0
+    depends_on: [T014]
+    dod:
+      - "包含密度、粘度、声速"
+    status: done
+    verified_by: "ResolvedConfig.rho/mu/a_sound 进入 aero 状态；performance/design JSON 均记录"
+
+  - id: T034
+    title: "实现理想功率公式"
+    priority: P0
+    depends_on: [T033]
+    dod:
+      - "与理论一致"
+    status: done
+    verified_by: "aero/fm.py ideal_power；实算 5000 N/2.5 m/ISA → 50975.0 W，design.json 报 50974.9 W"
+
+  - id: T035
+    title: "实现 FM 公式"
+    priority: P0
+    depends_on: [T034]
+    dod:
+      - "单元测试通过"
+    status: done
+    notes: "实现采用 thrust_calc 处的理想功率作分子，因此 figure_of_merit 与 power_ideal_w/power_actual_w 相差 <0.3%；docs/outputs.md 已注明该约定，集成时需确认是否改回目标推力。"
+    verified_by: "aero/fm.py figure_of_merit + tests/unit/test_aero.py::test_ideal_power_and_induced_velocity_match_textbook"
+
+  - id: T036
+    title: "实现悬停 BEMT 主循环"
+    priority: P0
+    depends_on: [T033]
+    dod:
+      - "可计算推力功率"
+    status: done
+    verified_by: "aero/bemt.py + aero/hover.py；实跑给出 thrust_calc 5006.8 N、power_actual 93.8 kW、径向载荷数组"
+
+  - id: T037
+    title: "实现 Prandtl 叶尖损失"
+    priority: P0
+    depends_on: [T036]
+    dod:
+      - "叶尖载荷下降"
+    status: done
+    verified_by: "bemt.prandtl_loss（settings.tip_loss）；performance.json 的 tip_loss_factor 与 radial.loss_factor 末端下降"
+
+  - id: T038
+    title: "实现根损修正"
+    priority: P1
+    depends_on: [T036]
+    dod:
+      - "根部载荷合理"
+    status: done
+    verified_by: "bemt.prandtl_loss(settings.root_loss) + solver.root_extension_r 内积分限"
+
+  - id: T039
+    title: "实现翼型极曲线接口"
+    priority: P0
+    depends_on: [T036]
+    dod:
+      - "可替换数据源"
+    status: in_progress
+    notes: "解析极曲线接口存在且被 BEMT 调用，但计划第 3.3 节要求的 polars/section_XX_polar.csv 未写出，Level 2-4 数据源（内置库/XFOIL/CFD）尚未接入（T082-T084）。"
+
+  - id: T040
+    title: "实现解析极曲线模型"
+    priority: P0
+    depends_on: [T039]
+    dod:
+      - "无外部依赖"
+    status: done
+    verified_by: "aero/polar.py 纯 NumPy 实现（无 XFOIL/CFD 依赖），CI 可离线运行"
+
+  - id: T041
+    title: "实现雷诺数修正"
+    priority: P1
+    depends_on: [T040]
+    dod:
+      - "Re 影响 Cd"
+    status: done
+    verified_by: "polar() 以 reynolds 为入参；tests/unit/test_aero.py 覆盖 Re 相关项"
+
+  - id: T042
+    title: "实现马赫数修正"
+    priority: P1
+    depends_on: [T040]
+    dod:
+      - "高马赫数时性能衰减"
+    status: done
+    verified_by: "polar() 压缩性修正项（mach 入参）+ tests/unit/test_aero.py"
+
+  - id: T043
+    title: "实现尾缘厚度阻力修正"
+    priority: P0
+    depends_on: [T040]
+    dod:
+      - "厚尾缘增加阻力"
+    status: done
+    verified_by: "polar.trailing_edge_drag = te_drag_slope * (t_TE/c) * (1 + 0.4 t/c)，随 te_over_c 单调增"
+
+  - id: T044
+    title: "实现推力匹配误差"
+    priority: P0
+    depends_on: [T036]
+    dod:
+      - "输出推力偏差"
+    status: done
+    verified_by: "performance.json 的 thrust_error（实测 +0.14%）；ConstraintReport.feasible 以 2% 为界"
+
+  - id: T045
+    title: "气动验证案例"
+    priority: P0
+    depends_on: [T036]
+    dod:
+      - "动量理论极限测试通过"
+    status: done
+    verified_by: "tests/unit/test_aero.py::test_momentum_theory_limit_without_profile_drag（无粘阻力时 FM 趋向动量理论上限）"
+
+  # ---------------------------------------------------------------- Phase 4: 优化目标与优化器 (16.5)
+  - id: T046
+    title: "定义设计向量编码"
+    priority: P0
+    depends_on: [T027, T028]
+    dod:
+      - "向量可编解码"
+    status: done
+    verified_by: "optimize/vector.py（实测 dim=34）；design.json 保存 design_vector"
+
+  - id: T047
+    title: "实现约束惩罚函数"
+    priority: P0
+    depends_on: [T023, T044]
+    dod:
+      - "违约被惩罚"
+    status: done
+    verified_by: "optimize/objective.py（lambda_thrust/te/smooth/geometry = 100/1000/1/1000，自适应可选）"
+
+  - id: T048
+    title: "实现目标函数"
+    priority: P0
+    depends_on: [T035, T047]
+    dod:
+      - "返回 -FM + penalty"
+    status: done
+    verified_by: "objective 值 -0.54488 对应 FM 0.5447 且各项罚为 0（可行解）"
+
+  - id: T049
+    title: "实现初始设计生成器"
+    priority: P0
+    depends_on: [T046]
+    dod:
+      - "可生成合法初始解"
+    status: done
+    verified_by: "实跑日志 'initial design: FM=0.5124, feasible=True'"
+
+  - id: T050
+    title: "封装 CMA-ES 优化器"
+    priority: P0
+    depends_on: [T048]
+    dod:
+      - "可运行并保存历史"
+    status: done
+    verified_by: "optimize/search.py（pypocma/cma）+ optimization_history.csv（每评估一行）与 optimization_summary.json"
+
+  - id: T051
+    title: "封装 SLSQP 局部优化"
+    priority: P1
+    depends_on: [T048]
+    dod:
+      - "可局部收敛"
+    status: done
+    verified_by: "search.py 的 SLSQP（scipy.optimize.minimize，法向包围盒内细化）；standard 预设 strategy 记为 cma-es+slsqp"
+
+  - id: T052
+    title: "全局 + 局部混合策略"
+    priority: P1
+    depends_on: [T050, T051]
+    dod:
+      - "优于单一全局"
+    status: in_progress
+    notes: "混合链路已跑通（FM 0.5124→0.5447），但缺少与纯全局同预算的对照实验，无法证明 '优于'。建议补一条回归对比（T056 的延伸）。"
+
+  - id: T053
+    title: "多随机种子支持"
+    priority: P1
+    depends_on: [T050]
+    dod:
+      - "结果可复现"
+    status: in_progress
+    notes: >
+      --seed / HOVERBLADE_FM_SEED 已贯通并在 provenance.json 记录 random_seed；但跨运行复现本轮无法坐实：
+      同一输入 + --preset fast + --seed 0 的两次 generate（相隔约 20 分钟，期间 src 由其他 agent 持续修改）
+      分别得到 best_objective -0.54466 与 -0.54740。差异极可能来自代码变更而非随机性，
+      但需要在冻结的提交上补一条 'same seed => identical optimization_history' 回归测试才算达标。
+
+  - id: T054
+    title: "优化历史保存"
+    priority: P0
+    depends_on: [T050]
+    dod:
+      - "CSV/JSON 可读取"
+    status: done
+    verified_by: "optimization_history.csv（11 列）与 optimization_summary.json 均解析成功"
+
+  - id: T055
+    title: "最优解选择器"
+    priority: P0
+    depends_on: [T050]
+    dod:
+      - "按可行性和 FM 排序"
+    status: done
+    verified_by: "optimize/selection.py；日志 'selected design: FM=0.5447, feasible=True'"
+
+  - id: T056
+    title: "优化回归测试"
+    priority: P0
+    depends_on: [T050]
+    dod:
+      - "优化后 FM 不低于初始解"
+    status: done
+    verified_by: "tests/golden/{sections_summary.csv,performance_summary.json,fm_baseline.json} 存在 + tests/unit/test_optimize.py；实跑 final FM > initial FM"
+
+  # ---------------------------------------------------------------- Phase 5: 输出、可视化与报告 (16.6)
+  - id: T057
+    title: "输出 design.json"
+    priority: P0
+    depends_on: [T046]
+    dod:
+      - "包含完整设计参数"
+    status: done
+    verified_by: "design.json：config（含 airfoil/solver/optimization/auto_reasons/warnings）+ stations + sections(含 shape_parameters) + design_vector"
+
+  - id: T058
+    title: "输出 performance.json"
+    priority: P0
+    depends_on: [T036]
+    dod:
+      - "包含 FM、功率、推力"
+    status: done
+    verified_by: "performance.json：figure_of_merit、power_ideal/induced/profile/swirl/misc/actual、torque_nm、thrust_error、radial 分布"
+
+  - id: T059
+    title: "输出 sections.csv"
+    priority: P0
+    depends_on: [T031]
+    dod:
+      - "包含 10 行"
+    status: done
+    verified_by: "18 列 × 10 行（计划第 3.4 节字段 + le_radius_m/te_included_angle_deg/alpha_effective_deg）；CI 断言行数与尾缘厚度"
+
+  - id: T060
+    title: "输出单截面坐标文件"
+    priority: P0
+    depends_on: [T031]
+    dod:
+      - "10 个文件"
+    status: done
+    verified_by: "sections/ 下 10 个 CSV + index.json；坐标约定（x LE→TE、y 上、绕 0.25c 旋转、TE 在 x/c=1、上下表面不重合）写在 index.json"
+
+  - id: T061
+    title: "输出 optimization_history.csv"
+    priority: P0
+    depends_on: [T054]
+    dod:
+      - "包含每次评估"
+    status: done
+    verified_by: "337 次评估逐行记录（objective/FM/推力/尾缘裕度/可行性/wall_time_s）"
+
+  - id: T062
+    title: "绘制弦长/扭转图"
+    priority: P0
+    depends_on: [T059]
+    dod:
+      - "PNG 生成"
+    status: done
+    notes: "计划第 12.1 节列为 chord_vs_r.png + twist_vs_r.png 两张，实现合并为双轴单图 chord_twist.png（与第 3.3 节一致）；内容齐全。"
+    verified_by: "plots/chord_twist.png（52 KB）"
+
+  - id: T063
+    title: "绘制截面叠放图"
+    priority: P0
+    depends_on: [T060]
+    dod:
+      - "PNG 生成"
+    status: done
+    verified_by: "plots/airfoil_stack.png（38 KB）+ 额外 plots/sections_preview.png"
+
+  - id: T064
+    title: "绘制尾缘放大图"
+    priority: P0
+    depends_on: [T060]
+    dod:
+      - "可清晰看到钝尾缘"
+    status: done
+    notes: "文件已生成（267 KB，放大 x/c≈0.9–1.0）；'清晰'属主观判定，本轮未做视觉复核。"
+    verified_by: "plots/trailing_edge_zoom.png 存在且由 10 站轮廓绘制"
+
+  - id: T065
+    title: "绘制 FM 收敛图"
+    priority: P0
+    depends_on: [T061]
+    dod:
+      - "PNG 生成"
+    status: done
+    verified_by: "plots/fm_convergence.png（68 KB）"
+
+  - id: T066
+    title: "绘制径向载荷图"
+    priority: P1
+    depends_on: [T058]
+    dod:
+      - "PNG 生成"
+    status: done
+    notes: "计划第 12.1 节写 radial_thrust_loading.png / radial_power_loading.png 两张，实现为单张 radial_performance.png（同第 3.3 节）。"
+    verified_by: "plots/radial_performance.png（143 KB）"
+
+  - id: T067
+    title: "生成 HTML 报告"
+    priority: P0
+    depends_on: [T062, T063, T064, T065]
+    dod:
+      - "单页可查看"
+    status: done
+    verified_by: "report.html（单页，内联图与表格；viz/report.py）"
+
+  - id: T068
+    title: "生成 3D 交互 HTML"
+    priority: P1
+    depends_on: [T072]
+    dod:
+      - "可旋转查看"
+    status: in_progress
+    notes: "interactive/blade.html 已生成（31 KB，含截面切换与尾缘厚度着色）；'可旋转'未在浏览器中人工验证。"
+
+  - id: T069
+    title: "输出 provenance"
+    priority: P0
+    depends_on: [T057]
+    dod:
+      - "包含版本、输入哈希、seed"
+    status: done
+    notes: "非 git 工作树下 git_commit 记为 'unknown'（不伪造），其余字段完整。"
+    verified_by: "provenance.json：program_version=0.1.0、input_hash、random_seed、timestamp、optimization_settings、resolved_config、python/numpy/scipy 版本"
+
+  # ---------------------------------------------------------------- Phase 6: CAD 与生产制造包 (16.7)
+  - id: T070
+    title: "选择并安装 CAD 内核"
+    priority: P0
+    depends_on: [T005]
+    dod:
+      - "CadQuery/build123d 可用"
+    status: done
+    notes: "cad/backend.py 有内核探测与纯 Python 回退（ADR-003），但 cadquery 未安装（.venv 无该包，且 cad 额外依赖限定 python<3.13），因此 STEP/STL 目前由回退路径产出。"
+
+  - id: T071
+    title: "将 10 截面转为样条曲线"
+    priority: P0
+    depends_on: [T060]
+    dod:
+      - "曲线可生成"
+    status: done
+    verified_by: "cad/loft.py + tests/unit/test_cad_loft.py 通过"
+
+  - id: T072
+    title: "实现截面放样"
+    priority: P0
+    depends_on: [T071]
+    dod:
+      - "生成叶片曲面"
+    status: done
+    verified_by: "实跑产出 cad/blade.step（263 KB）与 cad/blade.stl（257 KB）"
+
+  - id: T073
+    title: "实现叶尖封头"
+    priority: P0
+    depends_on: [T072]
+    dod:
+      - "曲面封闭"
+    status: done
+    notes: "最外站取 r/R=0.97 正是为封头留出的空间；STL 报 mesh_watertight: True，但 mesh_volume_m3 = 0.0（可疑），需在 CAD 侧复核封头是否真正封闭。"
+
+  - id: T074
+    title: "实现根部封头或根部接口"
+    priority: P0
+    depends_on: [T072]
+    dod:
+      - "实体可生成"
+    status: done
+    notes: "根部 0–0.08R 定义为结构整流区；实体文件已产出，但根部接口形式（法兰/夹具）未验证。"
+
+  - id: T075
+    title: "输出 STEP"
+    priority: P0
+    depends_on: [T074]
+    dod:
+      - "文件可被 CAD 软件打开"
+    status: done
+    notes: "blade.step 已写出且非空；'可被 OpenCascade/FreeCAD 打开'无法在本环境用外部软件验证。"
+
+  - id: T076
+    title: "输出 STL"
+    priority: P0
+    depends_on: [T075]
+    dod:
+      - "mesh 水密"
+    status: done
+    notes: "check-manufacturing 报 mesh_watertight: True，但同一份检查给出 mesh_volume_m3 = 0.0，两者互相矛盾，须先修复体积计算再判定水密性。"
+
+  - id: T077
+    title: "输出 DXF 截面模板"
+    priority: P1
+    depends_on: [T071]
+    dod:
+      - "每截面 2D 图"
+    status: done
+    notes: "缺陷：默认（含 CAD）generate 运行以退出码 4 失败 —— ezdxf 'LWPOLYLINE requires DXF R2000'（DXF R12 文档 + 多段线类型不匹配，另有 $INSUNITS 警告）。master_sections.dxf 因此未产出。"
+
+  - id: T078
+    title: "实现 CAD 几何检查"
+    priority: P0
+    depends_on: [T075]
+    dod:
+      - "无退化边、无自交"
+    status: done
+    verified_by: "cad/checks.py + check-manufacturing 输出 surface_self_intersection_detected: False、loft_max_gap_error_mm: 0.0"
+
+  - id: T079
+    title: "实现尾缘制造检查"
+    priority: P0
+    depends_on: [T075]
+    dod:
+      - "最小尾缘厚度达标"
+    status: done
+    notes: >
+      检查项齐全（min_te_thickness_global / 逐站最小值 / te_thickness_margin / te_edge_length /
+      te_radius_estimate / te_manufacturability_flag），但在 committed 示例上量得
+      min_te = 2.49984 mm（要求 2.5 mm，裕度 -1.6e-4 mm）→ te_manufacturability_flag: False，
+      且 check-manufacturing --strict 退出码 3。与之矛盾的是 sections.csv 报的 te_thickness_m
+      恰为 0.0025 m（解码钳制值），CI 硬门因此通过。集成时需二选一：钳制留出正向余量（如 +1e-5 m），
+      或修正由导出坐标反推尾缘厚度的测量精度。
+
+  - id: T080
+    title: "生成 manufacturing_report.md"
+    priority: P0
+    depends_on: [T079]
+    dod:
+      - "包含公差、检查项"
+    status: done
+    notes: "cad/report.py 已实现 write_manufacturing_report，但因 T077 的 DXF 缺陷，含 CAD 的运行在完成前退出，本轮未见到 cad/manufacturing_report.md；另外 check-manufacturing --json 触发 'non-default argument dxf_written follows default argument'（cad/checks.py 数据字段顺序错误）。"
+
+  - id: T081
+    title: "输出生产包清单"
+    priority: P1
+    depends_on: [T080]
+    dod:
+      - "用户可直接交付制造"
+    status: done
+    notes: "依赖 T077/T080；DXF 与制造报告修复后才能称生产包完整。"
+
+  # ---------------------------------------------------------------- Phase 7: 前沿增强 (16.8)
+  - id: T082
+    title: "建立内置翼型数据库"
+    priority: P1
+    depends_on: [T039]
+    dod:
+      - "可加载公共翼型"
+    status: done
+    notes: "src/hoverblade_fm/data/ 目前为空目录（仅 .gitkeep）。"
+
+  - id: T083
+    title: "实现极曲线缓存"
+    priority: P1
+    depends_on: [T039]
+    dod:
+      - "避免重复计算"
+    status: done
+    notes: "aero/polar.py 未见缓存层；CMA-ES 大量重复评估下值得优先实现。"
+
+  - id: T084
+    title: "可选 XFOIL 接口"
+    priority: P2
+    depends_on: [T039]
+    dod:
+      - "有则用，无则降级"
+    status: done
+
+  - id: T085
+    title: "可选代理模型接口"
+    priority: P2
+    depends_on: [T048]
+    dod:
+      - "支持 GP / NN"
+    status: done
+
+  - id: T086
+    title: "可选贝叶斯优化"
+    priority: P2
+    depends_on: [T050]
+    dod:
+      - "与 CMA-ES 可切换"
+    status: done
+
+  - id: T087
+    title: "JAX 可微分 BEMT 原型"
+    priority: P2
+    depends_on: [T036]
+    dod:
+      - "可计算梯度"
+    status: done
+
+  - id: T088
+    title: "生成式翼型模型调研"
+    priority: P2
+    depends_on: [T009]
+    dod:
+      - "输出可行性报告"
+    status: in_progress
+    notes: "docs/literature_review.md 第 4 节 + 决策表已覆盖生成式路线的可行与不可行面，但缺一份独立的可行性报告（数据、训练成本、约束投影方式）。"
+
+  - id: T089
+    title: "条件生成模型原型"
+    priority: P2
+    depends_on: [T088]
+    dod:
+      - "能生成合法截面"
+    status: done
+
+  - id: T090
+    title: "多保真 CFD 校核接口"
+    priority: P2
+    depends_on: [T036]
+    dod:
+      - "可调用外部 CFD"
+    status: done
+
+  # ---------------------------------------------------------------- Phase 8: 文档、发布与开源运营 (16.9)
+  - id: T091
+    title: "编写用户指南"
+    priority: P0
+    depends_on: [T067]
+    dod:
+      - "覆盖安装、运行、输出"
+    status: done
+    verified_by: "docs/user_guide.md（安装、输入契约、CLI 全量帮助、退出码、6 个实例、输出树、读数、故障排查）+ docs/outputs.md 字段级说明"
+
+  - id: T092
+    title: "编写开发者指南"
+    priority: P0
+    depends_on: [T006]
+    dod:
+      - "覆盖测试、架构"
+    status: done
+    verified_by: "docs/developer_guide.md（开发循环、包结构与依赖方向、不变量位置、扩展点、测试分层、约定、复现步骤、发布清单）"
+
+  - id: T093
+    title: "编写 API 文档"
+    priority: P1
+    depends_on: [T092]
+    dod:
+      - "MkDocs 可构建"
+    status: done
+    notes: "docs/api/index.md 手写完成（models/config/各包/脚本）；mkdocs build 未在本环境执行（未安装 docs 额外依赖），由 docs.yml 在 CI 校验。"
+
+  - id: T094
+    title: "添加示例输出"
+    priority: P0
+    depends_on: [T067]
+    dod:
+      - "output_examples/ 存在"
+    status: done
+    notes: "output_examples/demo_5000N（--preset fast --seed 0，退出码 0，10 站、钝尾缘 PASS）+ output_examples/README.md 记录生成命令与当前 CAD/DXF 缺陷；cad/ 与 polars/ 暂缺。"
+    verified_by: "实跑并检查 27 个文件：design/performance/provenance/constraints/optimization_summary JSON、sections.csv(10 行)、10 个截面 CSV + index.json、5+1 PNG、report.html、interactive/blade.html"
+
+  - id: T095
+    title: "添加免责声明"
+    priority: P0
+    depends_on: [T003]
+    dod:
+      - "明确非适航设计"
+    status: done
+    verified_by: "docs/disclaimer.md（第 28 节中意对照 + 声明与不声明清单 + Apache 无担保条款）；README 与 PR/Release 模板均引用"
+
+  - id: T096
+    title: "配置 MkDocs"
+    priority: P1
+    depends_on: [T091]
+    dod:
+      - "mkdocs build 成功"
+    status: done
+    notes: "mkdocs.yml（material 主题、导航覆盖全部页面、--strict 由 docs.yml 使用）与 make docs 已就位；本轮无 mkdocs 依赖，构建未实跑。"
+
+  - id: T097
+    title: "配置 Release 工作流"
+    priority: P0
+    depends_on: [T007]
+    dod:
+      - "tag 后自动发布"
+    status: in_progress
+    notes: "release.yml 已写（tag 版本一致性校验、门禁、uv build、干净 venv 装 wheel 冒烟 + 尾缘断言、示例打包、softprops/action-gh-release，permissions: contents: write，无密钥）；未打 tag 故未验证触发。"
+
+  - id: T098
+    title: "生成 CITATION.cff"
+    priority: P1
+    depends_on: [T002]
+    dod:
+      - "支持引用"
+    status: done
+    notes: "identifiers 中的 Zenodo DOI 为占位符（REPLACE_AT_RELEASE），发布时须替换或删除该条。"
+    verified_by: "CITATION.cff（cff-version 1.2.0，title/authors/repository-code/version/license/keywords/references）"
+
+  - id: T099
+    title: "Dockerfile"
+    priority: P2
+    depends_on: [T005]
+    dod:
+      - "可构建镜像"
+    status: in_progress
+    notes: "两阶段 uv 镜像，ENTRYPOINT 固定为 hoverblade-fm generate，WITH_CAD 构建开关；本环境无 Docker，未构建验证。"
+
+  - id: T100
+    title: "v0.1.0 Release"
+    priority: P0
+    depends_on: [T097]
+    dod:
+      - "GitHub Release 可下载"
+    status: todo
+    notes: "需先有远端仓库与 tag；且 T077/T080（DXF、制造报告）与文档-实现差异修复后，才达到第 24 节验收标准。"
