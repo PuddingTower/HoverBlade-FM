@@ -43,9 +43,7 @@ hoverblade-fm = "hoverblade_fm.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hoverblade_fm"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/hoverblade_fm/data" = "hoverblade_fm/data"
+artifacts = ["src/hoverblade_fm/data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
