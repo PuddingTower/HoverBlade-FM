@@ -1,0 +1,20 @@
+{
+  "blade_count": 4,
+  "collective_trim_deg": 4.884491938013852,
+  "figure_of_merit": 0.5363992273546597,
+  "figure_power_w_per_n": 19.0301870922171,
+  "power_actual_w": 95389.98012976813,
+  "power_ideal_w": 50974.89712257703,
+  "power_induced_w": 47924.95593034594,
+  "power_misc_w": 0.0,
+  "power_profile_w": 47465.02419942219,
+  "power_swirl_w": 0.0,
+  "rpm": 778.8390576632609,
+  "solidity": 0.049539323957771095,
+  "thrust_calc_n": 5012.56134096445,
+  "thrust_error": 0.002512268192890042,
+  "thrust_target_n": 5000.0,
+  "tip_loss_factor": 0.3392210715048216,
+  "tip_mach": 0.5991874809873871,
+  "torque_nm": 1169.570532682834
+}

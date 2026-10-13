@@ -1,0 +1,13 @@
+{
+  "final_figure_of_merit": 0.5363992273546597,
+  "initial_figure_of_merit": 0.5123754383639771,
+  "max_evaluations": 120,
+  "min_te_thickness_m": 0.0025000000025000003,
+  "n_radial": 81,
+  "popsize": 12,
+  "program_version": "0.1.0",
+  "required_te_thickness_m": 0.0025,
+  "seed": 42,
+  "solidity": 0.049539323957771095,
+  "thrust_error": 0.002512268192890042
+}
