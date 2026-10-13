@@ -1,0 +1,18 @@
+{
+  "provenance": "NACA four-digit sections are generated analytically from the public-domain thickness and camber-line formulae implemented in hoverblade_fm.geometry.library; no third-party coordinate table is redistributed. The CST hover sections are produced by this project's own constrained parameterisation.",
+  "naca_four_digit": [
+    { "name": "NACA0012", "code": "0012", "t_over_c": 0.12, "camber": 0.0, "camber_position": 0.0, "note": "symmetric reference section, useful for root fairing studies" },
+    { "name": "NACA0015", "code": "0015", "t_over_c": 0.15, "camber": 0.0, "camber_position": 0.0, "note": "symmetric, thick inboard option" },
+    { "name": "NACA0018", "code": "0018", "t_over_c": 0.18, "camber": 0.0, "camber_position": 0.0, "note": "very thick, low Reynolds penalty root candidate" },
+    { "name": "NACA2412", "code": "2412", "t_over_c": 0.12, "camber": 0.02, "camber_position": 0.4, "note": "lightly cambered, mid Reynolds hover workhorse" },
+    { "name": "NACA4412", "code": "4412", "t_over_c": 0.12, "camber": 0.04, "camber_position": 0.4, "note": "more camber, higher maximum lift" },
+    { "name": "NACA2415", "code": "2415", "t_over_c": 0.15, "camber": 0.02, "camber_position": 0.4, "note": "cambered and thick, good structural fill" },
+    { "name": "NACA4415", "code": "4415", "t_over_c": 0.15, "camber": 0.04, "camber_position": 0.4, "note": "high-lift inboard section for small rotors" }
+  ],
+  "cst_hover": [
+    { "name": "HVR-T18", "t_over_c": 0.18, "x_t": 0.30, "camber": 0.045, "camber_position": 0.392, "te_gap": 0.012, "le_factor": 1.1, "note": "thick inboard hover section from the constrained CST family" },
+    { "name": "HVR-T14", "t_over_c": 0.14, "x_t": 0.30, "camber": 0.035, "camber_position": 0.408, "te_gap": 0.010, "le_factor": 1.05, "note": "mid-span hover section, balanced drag and lift" },
+    { "name": "HVR-T10", "t_over_c": 0.10, "x_t": 0.30, "camber": 0.025, "camber_position": 0.424, "te_gap": 0.008, "le_factor": 1.0, "note": "thin outboard section for low profile power" },
+    { "name": "HVR-T08", "t_over_c": 0.08, "x_t": 0.30, "camber": 0.02, "camber_position": 0.43, "te_gap": 0.007, "le_factor": 0.95, "note": "tip section, minimum profile drag at moderate lift" }
+  ]
+}
