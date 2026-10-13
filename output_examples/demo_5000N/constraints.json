@@ -1,0 +1,11 @@
+{
+  "te_min_required_m": 0.0025,
+  "te_min_actual_m": 0.0025,
+  "te_violation_m": 0.0,
+  "te_included_angle_ok": true,
+  "thrust_error": 0.00310273596,
+  "geometry_valid": true,
+  "geometry_issues": [],
+  "smoothness_penalty": 0.0,
+  "feasible": true
+}

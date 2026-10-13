@@ -1,0 +1,33 @@
+{
+  "blocking_failures": [],
+  "files": [
+    {
+      "bytes": 1644314,
+      "file": "blade.step",
+      "role": "3D solid for CAD, mould design and CNC reference",
+      "sha256": "52a70cdd2a767efe1793696733ef2dfcd5f38fc05d30f3b2b9ec6d099016e1f6"
+    },
+    {
+      "bytes": 257684,
+      "file": "blade.stl",
+      "role": "watertight triangulation for 3D printing and toolpaths",
+      "sha256": "53e7f19a24c6736c681e1af18d869678dbc331bfd789c19e6c9b1ef8c0d1585b"
+    },
+    {
+      "bytes": 4182,
+      "file": "manufacturing_report.md",
+      "role": "check results, tolerances and reading instructions",
+      "sha256": "d9ef89b650c231d77102b667196d60d40d27ef401b11777c5c07a271d5bf560f"
+    },
+    {
+      "bytes": 205370,
+      "file": "master_sections.dxf",
+      "role": "2D master templates for lofting, trimming and inspection",
+      "sha256": "d259d709e91562fb32ef99ccf7a3b3a0f57b4950ded01e402ec24a48ea94506e"
+    }
+  ],
+  "generated_utc": "2026-10-13T17:34:17Z",
+  "package": "HoverBlade-FM manufacturing package",
+  "package_ok": true,
+  "units": "MM"
+}

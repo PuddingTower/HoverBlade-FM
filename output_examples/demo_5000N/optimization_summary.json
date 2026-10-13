@@ -1,0 +1,7 @@
+{
+  "best_objective": -0.546896,
+  "best_evaluation": 322,
+  "evaluations": 337,
+  "strategy": "cma-es",
+  "seed": 42
+}
