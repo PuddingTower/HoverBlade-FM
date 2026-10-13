@@ -1,0 +1,58 @@
+# CITATION.cff - Citation File Format specification: https://citationcff.code
+cff-version: 1.2.0
+message: "If you use HoverBlade-FM in research or industry work, please cite this
+  software and the papers listed in docs/literature_review.md."
+title: "HoverBlade-FM: hover-only rotor end-to-end generator with a blunt
+  trailing-edge hard constraint and Figure-of-Merit maximisation"
+abstract: "Given target thrust, rotor radius and minimum trailing-edge thickness,
+  HoverBlade-FM resolves the remaining design parameters, generates ten radial
+  sections parameterised with a class-shape-transformation (CST) mapping that carries
+  an explicit, hard-clamped trailing-edge gap, evaluates hover performance with a
+  blade-element-momentum solver using Prandtl tip and root losses plus an analytic
+  polar with Reynolds, Mach and blunt-edge drag corrections, maximises the hover
+  figure of merit with CMA-ES and an SLSQP refinement, and exports CSV/JSON data,
+  plots, an HTML report, an interactive blade view and STEP/STL/DXF manufacturing
+  files with a manufacturing report."
+authors:
+  - name: "HoverBlade-FM contributors"
+    entity: true
+repository-code: "https://github.com/hoverblade-fm/HoverBlade-FM"
+url: "https://github.com/hoverblade-fm/HoverBlade-FM"
+license: Apache-2.0
+type: software
+version: "0.1.0"
+date-released: "2026-10-14"
+keywords:
+  - rotor
+  - hover
+  - figure of merit
+  - blade element momentum theory
+  - CST
+  - airfoil parameterization
+  - blunt trailing edge
+  - CMA-ES
+  - shape optimization
+  - manufacturing geometry
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.REPLACE_AT_RELEASE"
+    description: "Reserved at the time of writing; the release workflow (T100) fills
+      this in once the Zenodo concept DOI exists.  Until then cite the repository URL
+      and the commit hash recorded in provenance.json."
+references:
+  - type: software
+    title: "cma: Evolution Strategy Optimization"
+    authors:
+      - given-names: Nikolaus
+        family-names: Hansen
+    url: "https://arxiv.org/abs/1604.00772"
+    year: 2016
+    notes: "The CMA-ES implementation used for the global search stage."
+  - type: software
+    title: "SciPy 1.0: fundamental algorithms for scientific computing in Python"
+    authors:
+      - given-names: Pauli
+        family-names: Virtanen
+    url: "https://doi.org/10.1038/s41592-019-0686-2"
+    year: 2020
+    notes: "Provides SLSQP, used for the local refinement stage."

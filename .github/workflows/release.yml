@@ -1,0 +1,184 @@
+# Release pipeline (计划.md T097 / 第 14.5 节 build-package, 第 23 节 gate 10).
+#
+# Triggered by a `v*` tag.  Builds sdist + wheel with `uv build`, runs the test suite
+# against the built artefacts, produces a reproducible example run and attaches everything
+# to a GitHub Release.  No secrets are required: GITHUB_TOKEN with `contents: write` is
+# enough, and the release body comes from CHANGELOG.md.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  HOVERBLADE_FM_OFFLINE: "1"
+  MPLBACKEND: "Agg"
+  UV_LINK_MODE: copy
+
+jobs:
+  build:
+    name: build and verify ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Guard - tag must match the project version
+        shell: bash
+        run: |
+          set -eu
+          tag="${GITHUB_REF_NAME}"
+          if [ "${tag#v}" = "" ]; then
+            echo "malformed tag: $tag" >&2
+            exit 1
+          fi
+          py=$(sed -n 's/^version = "\([^"]*\)".*/\1/p' pyproject.toml | head -n 1)
+          echo "tag=${tag} pyproject=${py}"
+          if [ "${tag#v}" != "$py" ]; then
+            echo "tag ${tag} does not match pyproject.toml version ${py}" >&2
+            exit 1
+          fi
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.12"
+          cache: true
+          cache-dependency-path: uv.lock
+
+      - name: Sync environment
+        run: uv sync --extra dev
+
+      - name: Quality gate (lint, types, tests)
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+          uv run mypy src
+          uv run pytest -q
+
+      - name: Build sdist and wheel
+        run: uv build
+
+      - name: Smoke-test the built wheel in a clean venv
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv venv --seed /tmp/wheeltest
+          uv pip install --python /tmp/wheeltest/bin/python dist/*.whl
+          /tmp/wheeltest/bin/hoverblade-fm version
+          /tmp/wheeltest/bin/hoverblade-fm generate examples/input_5000N.json \
+            --out /tmp/wheeltest_out --preset fast --seed 0
+          test -s /tmp/wheeltest_out/sections.csv
+          /tmp/wheeltest/bin/python - <<'PY'
+          import csv
+          import json
+
+          required = json.load(open("examples/input_5000N.json", encoding="utf-8"))["trailing_edge_thickness_m"]
+          rows = list(csv.DictReader(open("/tmp/wheeltest_out/sections.csv", encoding="utf-8-sig")))
+          te = min(float(row["te_thickness_m"]) for row in rows)
+          assert len(rows) == 10, f"expected 10 sections, got {len(rows)}"
+          assert te >= float(required) - 1e-12, f"blunt trailing edge violated: {te} < {required}"
+          print(f"wheel smoke OK: 10 sections, min te_thickness_m={te:.6f}")
+          PY
+
+      - name: Generate the example output bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          uv run hoverblade-fm generate examples/input_5000N.json \
+            --out release_example/demo --preset standard --seed 0
+          uv run hoverblade-fm summary release_example/demo --json > release_example/demo_summary.json
+          cp examples/input_5000N.json release_example/
+          uv run python - <<'PY'
+          import pathlib
+          import zipfile
+
+          root = pathlib.Path("release_example")
+          with zipfile.ZipFile(pathlib.Path("hoverblade-fm-example-output.zip"), "w", zipfile.ZIP_DEFLATED) as zf:
+              for path in sorted(root.rglob("*")):
+                  if path.is_file():
+                      zf.write(path, path.as_posix())
+          print("example bundle written")
+          PY
+
+      - name: List artefacts
+        shell: bash
+        run: ls -lh dist
+
+      - name: Upload workflow artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artefacts
+          path: |
+            dist/
+            hoverblade-fm-example-output.zip
+          retention-days: 30
+
+  github-release:
+    name: publish GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download build artefacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artefacts
+
+      - name: Draft release notes from CHANGELOG.md
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          {
+            echo "## HoverBlade-FM ${GITHUB_REF_NAME}"
+            echo
+            echo "Hover-only rotor end-to-end generator (悬停旋翼端到端生成器): three inputs ->"
+            echo "10 blunt-trailing-edge sections, hover BEMT performance with Figure of Merit"
+            echo "(品质因数), plots, HTML report and a STEP / STL / DXF manufacturing package."
+            echo
+            echo "Install the wheel from this release, or \`uv tool install hoverblade-fm\` once published."
+            echo
+            echo "### Changelog entry"
+            echo
+            if [ -f CHANGELOG.md ]; then
+              awk -v want="## \\[${version}\\]" '
+                $0 ~ want {flag=1}
+                flag && /^## \[/ && $0 !~ want {exit}
+                flag {print}
+              ' CHANGELOG.md
+            fi
+            echo
+            echo "### Attached artefacts"
+            find dist -maxdepth 1 -type f -printf '- `%f`\n' 2>/dev/null || ls -1 dist
+            echo "- \`hoverblade-fm-example-output.zip\` — reproducible example run (input_5000N, standard preset, seed 0)"
+            echo
+            echo "> Outputs are aerodynamic and manufacturing geometry only — not an airworthiness,"
+            echo "> structural-strength or flight-safety certification. See docs/disclaimer.md."
+          } > release_notes.md
+          cat release_notes.md
+
+      - name: Create the release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: HoverBlade-FM ${{ github.ref_name }}
+          body_path: release_notes.md
+          files: |
+            dist/*
+            hoverblade-fm-example-output.zip
+          generate_release_notes: true
+          fail_on_unmatched_files: true

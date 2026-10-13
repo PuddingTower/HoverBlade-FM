@@ -1,0 +1,79 @@
+# MkDocs configuration for HoverBlade-FM (plan T096).
+# Build locally with:  uv run --extra docs mkdocs build --strict
+# Serve locally with:  uv run --extra docs mkdocs serve
+# `--strict` fails on broken internal links, so an unlisted docs/ file is caught in CI.
+
+site_name: HoverBlade-FM
+site_description: Hover-only rotor end-to-end generator with a blunt trailing-edge hard constraint and Figure-of-Merit maximisation
+site_author: HoverBlade-FM contributors
+site_url: https://hoverblade-fm.github.io/HoverBlade-FM/
+repo_name: hoverblade-fm/HoverBlade-FM
+repo_url: https://github.com/hoverblade-fm/HoverBlade-FM
+copyright: Copyright 2026 HoverBlade-FM contributors, Apache-2.0 (docs CC-BY-4.0)
+
+docs_dir: docs
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - search.suggest
+  palette:
+    - scheme: default
+      primary: blue grey
+      accent: deep orange
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue grey
+      accent: deep orange
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+nav:
+  - Overview: index.md
+  - User guide: user_guide.md
+  - Output reference: outputs.md
+  - Blunt trailing edge: blunt_trailing_edge.md
+  - Generative design: generative_airfoil_feasibility.md
+  - Developer guide: developer_guide.md
+  - API reference: api/index.md
+  - Literature:
+      - Review: literature_review.md
+      - Search queries: literature_search/queries.md
+  - Architecture decision records:
+      - README: adr/README.md
+      - ADR-001 CST + BEMT + CMA-ES: adr/0001-cst-plus-bemt-plus-cmaes.md
+      - ADR-002 Blunt TE as hard geometric constraint: adr/0002-blunt-te-as-hard-geometric-constraint.md
+      - ADR-003 Optional CAD kernel: adr/0003-cad-kernel-optional-with-pure-python-fallback.md
+  - Agent execution:
+      - Execution plan: agent/execution_plan.md
+      - Task list (YAML): agent/tasks.yaml
+  - Quality gates: quality_gates.md
+  - Disclaimer: disclaimer.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.arithmatex:
+      generic: true
+
+plugins:
+  - search
+
+extra_javascript:
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
+
+watch:
+  - docs

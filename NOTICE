@@ -1,0 +1,68 @@
+HoverBlade-FM
+Copyright 2026 HoverBlade-FM contributors
+
+This product includes software developed as part of the HoverBlade-FM project
+(https://github.com/hoverblade-fm/HoverBlade-FM), licensed under the Apache License,
+Version 2.0.
+
+================================================================================
+Third-party notices
+================================================================================
+
+The licences below are referenced here because HoverBlade-FM depends on them at
+build or run time.  None of them is a *core* dependency replacement: the geometric
+constraint, the hover BEMT solver and the optimisation objective are first-party
+code in `src/hoverblade_fm/`.
+
+NumPy (BSD-3-Clause), SciPy (BSD-3-Clause, with bundled code under other
+permissive licences), matplotlib (PSF-like/BSD-compatible), pydantic (MIT),
+CMA-ES / `cma` (BSD-3-Clause), pytest (MIT), ruff (MIT), mypy (MIT).
+
+Optional extras:
+
+* `cad` extra - CadQuery (Apache-2.0) and its OpenCascade (LGPL-2.1) kernel, plus
+  ezdxf (MIT).  Both are optional: `hoverblade-fm generate --no-cad` and the pure
+  Python fallback export path run without them (see docs/adr/0003).
+* `docs` extra - MkDocs Material (MIT) and mkdocstrings (MIT).
+
+`scripts/literature_search.py` talks to two public bibliographic APIs and stores
+their metadata locally in `docs/literature_search/`:
+
+* arXiv API terms of use: https://arxiv.org/help/api/tou
+  Metadata is redistributed under the Creative Commons By Attribution licence
+  (arXiv API Terms of Use).  The retrieved abstracts are the property of their
+  authors.
+* Crossref REST API: https://api.crossref.org
+  Crossref metadata is released as CC0 (https://www.crossref.org/services/metadata-delivery/rest-api/).
+
+Bibliographic entries curated in `SEED_DATA` inside `scripts/literature_search.py`
+are citations of third-party works, listed with their DOIs / arXiv identifiers and
+URLs in `docs/literature_search/summary.csv` and `docs/literature_review.md`.
+Citing them does not import their licences into this repository's source code.
+
+================================================================================
+Documentation and data licences (plan section 14.2)
+================================================================================
+
+* Source code, `Makefile`, `Dockerfile`, `scripts/`: Apache License 2.0 (see LICENSE).
+* `docs/**` prose (including the ADRs and the literature review): CC-BY-4.0.
+* `examples/*.json` input files and `output_examples/**`: CC0-1.0 (unencumbered
+  sample data so users can copy them into their own workflows freely).
+
+================================================================================
+No warranty
+================================================================================
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this
+file except in compliance with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under
+the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
+ANY KIND, either express or implied.  See the License for the specific language
+governing permissions and limitations under the License.
+
+HoverBlade-FM outputs aerodynamic shapes and manufacturing geometry.  It is not a
+flight-safety, structural-strength or airworthiness certification tool; see
+docs/disclaimer.md (计划.md 第 28 节 免责声明).

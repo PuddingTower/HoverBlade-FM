@@ -1,0 +1,210 @@
+# CI for HoverBlade-FM — 计划.md 第 14.5 节 (lint, type-check, unit-test, smoke-test,
+# example-run) and 第 23 节 quality gates.
+#
+# Written to run from a clean checkout: no secrets, no self-hosted runners, no cached
+# artefacts, and every job installs from `uv.lock`.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # keep the pipeline hermetic: no live arXiv / Crossref calls, no matplotlib display
+  HOVERBLADE_FM_OFFLINE: "1"
+  MPLBACKEND: "Agg"
+  UV_LINK_MODE: copy
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  quality:
+    name: lint + typecheck + tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: true
+          cache-dependency-path: uv.lock
+
+      # The base job deliberately uses only the dev extra: the `cad` extra pins cadquery to
+      # python_version < '3.13' and pulls the OpenCascade wheel, so it is exercised in its
+      # own non-blocking job below.
+      - name: Sync environment
+        run: uv sync --extra dev
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Mypy
+        run: uv run mypy src
+
+      - name: Pytest (unit + integration, coverage)
+        run: uv run pytest -q --cov --cov-report=term-missing --cov-report=xml --junitxml=pytest-${{ matrix.python-version }}.xml
+
+      - name: Literature retrieval runs offline (stdlib only, no network)
+        run: |
+          uv run python scripts/literature_search.py --offline --out "$RUNNER_TEMP/lit" --quiet
+          test -s "$RUNNER_TEMP/lit/raw.jsonl"
+          test -s "$RUNNER_TEMP/lit/summary.csv"
+
+      - name: Upload test artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-py${{ matrix.python-version }}
+          path: |
+            pytest-${{ matrix.python-version }}.xml
+            coverage.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
+  smoke:
+    name: end-to-end smoke + blunt trailing-edge gate (py3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.12"
+          cache: true
+          cache-dependency-path: uv.lock
+
+      - name: Sync environment
+        run: uv sync --extra dev
+
+      - name: Fast example run (计划.md 第 21.2 节)
+        # Exercises the CAD path too: with only the dev extra installed the builtin STEP/STL/DXF
+        # writers are used, so this job covers the dependency-free fallback (ADR-003).
+        run: >
+          uv run hoverblade-fm generate examples/input_5000N.json
+          --out output/ci_demo --preset fast --seed 0
+
+      - name: Required artefacts exist
+        run: |
+          test -s output/ci_demo/design.json
+          test -s output/ci_demo/performance.json
+          test -s output/ci_demo/provenance.json
+          test -s output/ci_demo/sections.csv
+          test "$(find output/ci_demo/sections -name 'section_*.csv' | wc -l)" -eq 10
+          test -s output/ci_demo/report.html
+
+      # HARD GATE: no sharp trailing edge, ever.  min(te_thickness_m) over the ten exported
+      # sections must be >= the requested trailing_edge_thickness_m from the input file.
+      - name: Blunt trailing-edge assertion on sections.csv
+        run: |
+          uv run python - <<'PY'
+          import csv
+          import json
+          import sys
+
+          required = json.loads(open("examples/input_5000N.json", encoding="utf-8").read())
+          te_min = float(required["trailing_edge_thickness_m"])
+          with open("output/ci_demo/sections.csv", newline="", encoding="utf-8-sig") as handle:
+              rows = list(csv.DictReader(handle))
+          if len(rows) != 10:
+              print(f"FAIL: expected 10 sections, got {len(rows)}", file=sys.stderr)
+              sys.exit(1)
+          te = [float(row["te_thickness_m"]) for row in rows]
+          print(f"min(te_thickness_m)={min(te):.6f} m, required>={te_min:.6f} m")
+          if min(te) < te_min - 1e-12:
+              print("FAIL: a section has a trailing edge thinner than requested", file=sys.stderr)
+              sys.exit(1)
+          if min(te) <= 1e-6:
+              print("FAIL: degenerate (sharp) trailing edge detected", file=sys.stderr)
+              sys.exit(1)
+          PY
+
+      - name: FM and thrust consistency
+        run: |
+          uv run python - <<'PY'
+          import json
+          perf = json.loads(open("output/ci_demo/performance.json", encoding="utf-8").read())
+          fm = float(perf["figure_of_merit"])
+          err = abs(float(perf["thrust_calc_n"]) - float(perf["thrust_target_n"])) / float(perf["thrust_target_n"])
+          print(f"FM={fm:.4f} thrust_error={err:.4%}")
+          if not 0.0 < fm <= 1.0:
+              # FM > 1 would mean the design beats the momentum-theory power bound, i.e. the
+              # aero model or the thrust trim has regressed, so this gate is deliberately hard.
+              raise SystemExit(f"figure of merit out of plausible range: {fm}")
+          if err > 0.02:
+              raise SystemExit(f"thrust match error too large: {err:.4f}")
+          PY
+
+      - name: Upload demo output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-demo-output
+          path: output/ci_demo
+          if-no-files-found: ignore
+          retention-days: 7
+
+  cad-extra:
+    name: optional CAD extra (non-blocking)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # cadquery is pinned to python_version < '3.13' in pyproject.toml; 3.12 is the
+      # newest interpreter that can install it.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.12"
+          cache: true
+          cache-dependency-path: uv.lock
+
+      - name: Sync with the cad extra
+        run: uv sync --extra dev --extra cad
+
+      - name: Manufacturing exports
+        run: >
+          uv run hoverblade-fm generate examples/input_5000N.json
+          --out output/ci_cad --preset fast --seed 0 --mesh-resolution standard
+
+      - name: CAD artefacts and manufacturing report
+        run: |
+          test -s output/ci_cad/cad/blade.step
+          test -s output/ci_cad/cad/blade.stl
+          test -s output/ci_cad/cad/master_sections.dxf
+          test -s output/ci_cad/cad/manufacturing_report.md
+
+      - name: Manufacturing check must pass without --strict
+        run: uv run hoverblade-fm check-manufacturing output/ci_cad
+
+      - name: Upload CAD artefacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-cad-output
+          path: output/ci_cad
+          if-no-files-found: ignore
+          retention-days: 7

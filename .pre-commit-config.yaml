@@ -1,0 +1,64 @@
+# Pre-commit hooks (local mirror of the CI quality gates, 计划.md 第 23 节).
+# Install with:  uv run pre-commit install
+# Run on everything:  uv run pre-commit run --all-files
+#
+# Keep this list short and identical to what CI enforces, so a green local run means a
+# green CI run.  Hooks use `uv run` so they share the project environment and lockfile.
+
+minimum_pre_commit_version: "3.5.0"
+ci:
+  autofix_commit_msg: "chore(pre-commit): auto fixes"
+  autofix_prs: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+        args: ["--allow-multiple-documents"]
+      - id: check-json
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md"]
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+        exclude: ^(output_examples/|docs/literature_search/)
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --extra dev ruff check --fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --extra dev ruff format
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: mypy-src
+        name: mypy (src)
+        entry: uv run --extra dev mypy src
+        language: system
+        files: ^src/.*\.pyi?$
+        pass_filenames: false
+        require_serial: true
+
+      # The project's hard gate (计划.md 第 5 / 23 节): a sharp trailing edge must never be
+      # reachable, so the guard tests run on every commit that touches geometry or aero.
+      - id: blunt-te-tests
+        name: blunt trailing edge tests
+        entry: uv run --extra dev pytest -q tests/unit -k "trailing or blunt or te_"
+        language: system
+        files: ^(src/hoverblade_fm/geometry|src/hoverblade_fm/aero|tests/unit)/.*\.py$
+        pass_filenames: false
+        require_serial: true

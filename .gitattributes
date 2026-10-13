@@ -1,0 +1,61 @@
+# Normalise line endings so that a checkout on Windows and one on Linux produce the same
+# files.  Declared explicitly because `sections.csv`, `provenance.json` and
+# `manufacturing_report.md` are byte-compared in the regression tests.
+
+* text=auto eol=lf
+
+# ---------------------------------------------------------------- source and docs
+*.py    text eol=lf
+*.pyi   text eol=lf
+*.md    text eol=lf
+*.rst   text eol=lf
+*.toml  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.json  text eol=lf
+*.jsonl text eol=lf
+*.csv   text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.js    text eol=lf
+*.cff   text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
+*.sh    text eol=lf
+LICENSE text eol=lf
+NOTICE  text eol=lf
+
+# Windows users still get LF in the working tree; the CSV/JSON readers accept either.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+
+# ---------------------------------------------------------------- generated outputs
+output_examples/**/sections.csv text eol=lf
+output_examples/**/design.json  text eol=lf
+output_examples/**/performance.json text eol=lf
+output_examples/**/provenance.json  text eol=lf
+output_examples/**/optimization_history.csv text eol=lf
+docs/literature_search/raw.jsonl text eol=lf
+docs/literature_search/summary.csv text eol=lf
+
+# ---------------------------------------------------------------- binary artefacts
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.stl binary
+*.step -text
+*.iges -text
+*.brep -text
+*.whl binary
+*.gz binary
+*.zip binary
+*.npz binary
+*.h5 binary
+
+# ---------------------------------------------------------------- diff hygiene
+uv.lock linguist-generated=true
+docs/literature_search/raw.jsonl linguist-generated=true
+docs/literature_search/summary.csv linguist-generated=true
